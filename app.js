@@ -105,7 +105,7 @@ app.post('/confirmation', function (req, res) {
 });
 
 //Start Server
-var port = process.env.PORT || 80;
+const port = process.env.PORT;
 app.listen(port, process.env.IP, function () {
     console.log("MPESA Server has started at port: " + port);
 });

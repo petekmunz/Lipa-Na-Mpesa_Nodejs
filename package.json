@@ -1,0 +1,24 @@
+{
+  "name": "lipa_na_mpesa_nodejs",
+  "version": "1.0.0",
+  "description": "A Nodejs implementation of Lipa na Mpesa API",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js"
+  },
+  "keywords": [
+    "MPESA",
+    "API",
+    "LIPA NA MPESA",
+    "STK push"
+  ],
+  "author": "Peter Munyao",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "prettyjson": "^1.2.1",
+    "request": "^2.88.0"
+  }
+}

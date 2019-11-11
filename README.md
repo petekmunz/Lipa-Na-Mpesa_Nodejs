@@ -17,3 +17,6 @@ To automatically get the correct dependencies used in this project, ensure you h
 
 1. Clone the project by running `git clone https://github.com/petekmunz/Lipa-Na-Mpesa_Nodejs.git` in your Git terminal.
 2. In your terminal ensure you are in the directory `Lipa-Na-Mpesa_Nodejs` then run `npm install`
+
+When all the requisite variables have been input, a succesful request will result in a STK push as shown below
+![STK push resulting from successful request](./screenshot/successful_request.png "STK push on successful request")

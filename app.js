@@ -99,9 +99,12 @@ app.post('/confirmation', function (req, res) {
     console.log('-----------C2B CONFIRMATION REQUEST------------');
     console.log(prettyjson.render(req.body, prettyJsonOptions));
     console.log('-----------------------');
-    let message = req.body;
-    //Handle the message data
-    res.json(message);  //Sample handling, don't replicate in production
+
+    let message = {
+        "ResultCode": 0,
+        "ResultDesc": "Success"
+    };
+    res.json(message);
 });
 
 //Start Server

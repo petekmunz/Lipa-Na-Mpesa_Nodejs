@@ -25,9 +25,13 @@ function getOauthToken() {
             }
         },
         function (error, response, body) {
-            // TODO: Use the body object to extract OAuth access token
-            let parsedData = JSON.parse(body);
-            oauth_token = (parsedData["access_token"]);
+            //Use the body object to extract OAuth access token
+            if (error) {
+                console.log("Auth Error: ", error);
+            } else {
+                let parsedData = JSON.parse(body);
+                oauth_token = parsedData["access_token"];
+            }
         }
     );
 }

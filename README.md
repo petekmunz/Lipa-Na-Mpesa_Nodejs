@@ -32,7 +32,7 @@ PASSKEY=***************
 SHORTCODE=174379            //This is the test shortcode
 ```
 
-* In the app.js file, replace the url here `"CallBackURL": "http://example.com/api/v1/c2bconfirmation"` with your actual callback url. The endpoint needs to be exposed to the internet if it is to receive a payload from Safaricom.
+* In the [app.js](./app.js) file, replace the url here `"CallBackURL": "http://example.com/api/v1/c2bconfirmation"` with your actual callback url. The endpoint needs to be exposed to the internet if it is to receive a payload from Safaricom.
 
 ## Running
 

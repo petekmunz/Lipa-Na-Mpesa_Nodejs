@@ -36,7 +36,7 @@ SHORTCODE=174379            //This is the test shortcode
 
 ## Running
 
-* Make a POST request to the `/mpesa` endpoint with a JSON with the parameters as in the example below
+* Make a POST request to the endpoint `http://localhost:3000/mpesa` with a JSON with the parameters as in the example below
 
 ```
 {

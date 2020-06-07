@@ -2,44 +2,38 @@ const prettyjson = require('prettyjson'),
     express = require('express'),
     bodyParser = require('body-parser'),
     app = express(),
-    request = require('request'),
-    consumer_key = "YOUR CONSUMER_KEY HERE",
-    consumer_secret = "YOUR CONSUMER_SECRET HERE",
+    axios = require('axios'),
+    config = require('./config'),
     url = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
-    auth = "Basic " + Buffer.from(consumer_key + ":" + consumer_secret).toString("base64");
+    consumer_key = config.consumerKey,
+    consumer_secret = config.secret,
+    passkey = config.passkey,
+    shortcode = config.shortcode,
+    port = config.port,
+    auth = "Basic " + Buffer.from(`${consumer_key}:${consumer_secret}`).toString("base64");
 
-var oauth_token;
+let oauth_token;
 
 const prettyJsonOptions = {
     noColor: true
 };
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 
-function getOauthToken() {
-    request(
-        {
-            url: url,
+async function getOauthToken() {
+    try {
+        let response = await axios.get(url, {
             headers: {
                 "Authorization": auth
             }
-        },
-        function (error, response, body) {
-            //Use the body object to extract OAuth access token
-            if (error) {
-                console.log("Auth Error: ", error);
-            } else {
-                let parsedData = JSON.parse(body);
-                oauth_token = parsedData["access_token"];
-            }
-        }
-    );
+        })
+        oauth_token = response.data.access_token;
+    } catch (error) {
+        console.log("Auth Error: ", error.response);
+    }
 }
 
-function startInterval(seconds, callbackFun) {
-    callbackFun();
-    let intervalVar = setInterval(callbackFun, seconds * 1000);
-    return intervalVar;
+function startInterval(seconds) {
+    setInterval(function () { getOauthToken() }, seconds * 1000);
 }
 
 function pad2(n) { return n < 10 ? '0' + n : n }
@@ -56,50 +50,46 @@ function formatDate() {
     return correctDate;
 }
 
-//Request New OAuth-Token on server start & after every 58mins(To be on the safe side) since tokens expire after 1hr.
-startInterval(3499, getOauthToken);
-
-app.get("/mpesa", function (req, res) {
-    //Replace With Your Own Values Where Necessary
-    let timestamp = formatDate();
-    let url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
-        passwordVar = Buffer.from("YOUR BUSINESS_SHORTCODE" + "YOUR PASSKEY HERE" + timestamp).toString("base64"),
-        auth = "Bearer " + oauth_token;
-    request(
-        {
+app.post("/mpesa", function (req, res) {
+    if (req.body.phoneNumber && req.body.amount) {
+        let timestamp = formatDate();
+        let url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
+            password = Buffer.from(shortcode + passkey + timestamp).toString("base64"),
+            auth = "Bearer " + oauth_token;
+        axios({
             method: 'POST',
             url: url,
             headers: {
                 "Authorization": auth
             },
-            json: {
-                "BusinessShortCode": "174379",              //Your Business ShortCode
-                "Password": passwordVar,
+            data: {
+                "BusinessShortCode": shortcode,                     //Your Business ShortCode
+                "Password": password,
                 "Timestamp": timestamp,
                 "TransactionType": "CustomerPayBillOnline",
-                "Amount": "11",                             //Amount to be paid
-                "PartyA": "254722xxxxxx",                   //Number sending funds
-                "PartyB": "174379",                         //Business ShortCode receiving funds   
-                "PhoneNumber": "254722xxxxxx",              //Number sending funds
-                "CallBackURL": "https://example.com/confirmation", //Your confirmation Url
-                "AccountReference": "Example",              //Name to display to receiver of STK Push
-                "TransactionDesc": "Testing mpesa"          //Description of Transaction
+                "Amount": req.body.amount,                          //Amount to be paid
+                "PartyA": req.body.phoneNumber,                     //Number sending funds
+                "PartyB": shortcode,                                //Business ShortCode receiving funds   
+                "PhoneNumber": req.body.phoneNumber,                //Number sending funds
+                "CallBackURL": "http://example.com/api/v1/c2bconfirmation", //Your confirmation Url
+                "AccountReference": "Example",                      //Name to display to receiver of STK Push
+                "TransactionDesc": "Testing mpesa"                  //Description of Transaction
             }
-        },
-        function (error, response, body) {
-            if (error) {
-                //Handle the error
-            } else {
-                // TODO: Use the body object to extract the response
-
-            }
-        }
-    )
-
+        }).then(response => {
+            res.status(200).send('Stk push sent to phone');
+            let responseBody = response.data;
+            //Using the above responseBody handle the data.
+        }).catch(error => {
+            res.status(500).send('There was an error');
+            console.error(`LNMO error is: ${error}`);
+        });
+    } else {
+        res.status(400).send('Bad request');
+    }
 });
 
 // C2B ConfirmationURL - /api/v1/c2b/confirmation
-app.post('/confirmation', function (req, res) {
+app.post('/api/v1/c2b/confirmation', function (req, res) {
     console.log('-----------C2B CONFIRMATION REQUEST------------');
     console.log(prettyjson.render(req.body, prettyJsonOptions));
     console.log('-----------------------');
@@ -111,8 +101,12 @@ app.post('/confirmation', function (req, res) {
     res.json(message);
 });
 
-//Start Server
-const port = process.env.PORT;
-app.listen(port, process.env.IP, function () {
-    console.log("MPESA Server has started at port: " + port);
+//Get auth token then start server
+getOauthToken().then(() => {
+    //Token gotten successfully, we can now start to listen
+    app.listen(port, function () {
+        //Request New OAuth-Token after every 58mins since tokens expire after 1hr.
+        startInterval(3499);
+        console.log(`MPESA Server has started at port: ${port}`);
+    });
 });
